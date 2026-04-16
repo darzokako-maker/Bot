@@ -1,4 +1,4 @@
-name: Ultimate Ghost Engine Build
+name: Ultimate Master Build
 
 on:
   push:
@@ -7,28 +7,19 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Python
+    - name: Python Setup
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-
     - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install customtkinter pymem pyinstaller
-
-    - name: Build Private EXE
-      run: |
-        # --noconsole: Siyah ekranı kapatır, --windowed: UI modunda çalıştırır
-        pyinstaller --noconfirm --onefile --windowed --noconsole --name "WinUpdateService" main.py
-
-    - name: Upload Artifact
+      run: pip install customtkinter pymem pyinstaller
+    - name: Final Build
+      run: pyinstaller --noconfirm --onefile --windowed --noconsole --name "WinUpdateService_v10" main.py
+    - name: Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Yahya_Private_Engine
-        path: dist/WinUpdateService.exe
+        name: Master_Engine_EXE
+        path: dist/WinUpdateService_v10.exe
         
