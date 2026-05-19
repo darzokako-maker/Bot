@@ -1,25 +1,29 @@
-name: Ultimate Master Build
+name: Build Yahya Stealth Blink
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Python Setup
-      uses: actions/setup-python@v5
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        python-version: '3.10'
-    - name: Install Dependencies
-      run: pip install customtkinter pymem pyinstaller
-    - name: Final Build
-      run: pyinstaller --noconfirm --onefile --windowed --noconsole --name "WinUpdateService_v10" main.py
-    - name: Artifact
+        dotnet-version: '8.0.x'
+
+    - name: Publish Single File EXE
+      run: dotnet publish Project.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=true
+
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Master_Engine_EXE
-        path: dist/WinUpdateService_v10.exe
+        name: Yahya-Stealth-Blink-EXE
+        path: bin/Release/net8.0-windows/win-x64/publish/
         
