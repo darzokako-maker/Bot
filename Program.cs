@@ -10,9 +10,8 @@ namespace SonOyuncuStealth
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
 
-        private const string TARGET_PROCESS = "SonOyuncu Client"; 
         private const int BLINK_KEY = 0x46; // F tuşu
-        private const int MAX_BLINK_MS = 1200; // 1.2 saniye güvenlik sınırı
+        private const int MAX_BLINK_MS = 1200; // Güvenli süre
 
         private static bool isEngaged = false;
         private static Stopwatch timer = new Stopwatch();
@@ -20,12 +19,10 @@ namespace SonOyuncuStealth
         static void Main(string[] args)
         {
             Console.Title = "YAHYA STEALTH NETWORK CONTROLLER";
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("==================================================");
-            Console.WriteLine("   YAHYA PRIVATE STEALTH - BLINK MODULE ACTIVE   ");
-            Console.WriteLine("==================================================");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("[-] SonOyuncu odaklanildi. F'ye basili tutarak aktif et.");
+            Console.WriteLine("------------------------------------------");
+            Console.WriteLine("YAHYA PRIVATE STEALTH - BLINK ENGINE V2");
+            Console.WriteLine("Durum: Hazır. F tuşuna basılı tut.");
+            Console.WriteLine("------------------------------------------");
 
             while (true)
             {
@@ -39,41 +36,68 @@ namespace SonOyuncuStealth
             }
         }
 
+        private static string GetTargetProcessPath()
+        {
+            // Tüm süreçleri tara
+            foreach (var proc in Process.GetProcesses())
+            {
+                // Hem "SonOyuncu" hem "Client" kelimelerini kapsayan süreçleri yakala
+                if (proc.ProcessName.Contains("SonOyuncu", StringComparison.OrdinalIgnoreCase) || 
+                    proc.ProcessName.Contains("Client", StringComparison.OrdinalIgnoreCase))
+                {
+                    try 
+                    { 
+                        string path = proc.MainModule.FileName;
+                        return path; 
+                    } 
+                    catch { continue; }
+                }
+            }
+            return null;
+        }
+
         private static void ToggleBlink(bool state)
         {
+            string path = GetTargetProcessPath();
+            string ruleName = "SO_STEALTH_BLOCK";
+
             if (state)
             {
+                if (path == null)
+                {
+                    Console.WriteLine("[!] HATA: Oyun süreci bulunamadı!");
+                    return;
+                }
+
                 isEngaged = true;
                 timer.Restart();
-                Execute("advfirewall firewall add rule name=\"SO_BLINK_ACTIVE\" dir=out action=block program=\"" + GetProcessPath(TARGET_PROCESS) + "\" enable=yes");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("[!] BLINK ENGAGED (Paketler tutuluyor)");
+                // Kuralı sıfırdan oluştur
+                Execute($"advfirewall firewall add rule name=\"{ruleName}\" dir=out action=block program=\"{path}\" enable=yes");
+                Console.WriteLine($"[!] BLINK ACTIVE -> {path}");
             }
             else
             {
                 isEngaged = false;
                 timer.Stop();
-                Execute("advfirewall firewall delete rule name=\"SO_BLINK_ACTIVE\"");
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("[+] BLINK RELEASED (Paketler iletildi) - Süre: " + timer.ElapsedMilliseconds + "ms");
+                // Kuralı temizle
+                Execute($"advfirewall firewall delete rule name=\"{ruleName}\"");
+                Console.WriteLine("[+] BLINK RELEASED -> Paketler sunucuya aktarıldı.");
             }
-        }
-
-        private static string GetProcessPath(string processName)
-        {
-            Process[] processes = Process.GetProcessesByName(processName);
-            if (processes.Length > 0)
-            {
-                try { return processes[0].MainModule.FileName; } catch { }
-            }
-            return "C:\\Program Files\\SonOyuncu\\SonOyuncu Client.exe";
         }
 
         private static void Execute(string args)
         {
-            var p = new ProcessStartInfo("netsh", args) { CreateNoWindow = true, UseShellExecute = false };
-            Process.Start(p);
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo("netsh", args) 
+                { 
+                    CreateNoWindow = true, 
+                    UseShellExecute = false,
+                    Verb = "runas" // Yönetici olarak çalıştırılmasını zorla
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex) { Console.WriteLine("[!] Hata: " + ex.Message); }
         }
     }
 }
-
